@@ -2,6 +2,28 @@ import Cookies from "js-cookie";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
+// Robust configuration helper to dynamically fix protocol mismatches on deployment platforms like Railway
+function getCleanBaseUrl(): string {
+  let cleanBase = BASE_URL.trim().replace(/\/$/, "");
+
+  // Force HTTPS if running in browser under an HTTPS connection or if built for production
+  if (typeof window !== "undefined") {
+    if (window.location.protocol === "https:" || window.location.hostname.includes("railway.app")) {
+      cleanBase = cleanBase.replace(/^http:\/\//, "https://");
+      if (!cleanBase.startsWith("https://")) {
+        cleanBase = `https://${cleanBase}`;
+      }
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    cleanBase = cleanBase.replace(/^http:\/\//, "https://");
+    if (!cleanBase.startsWith("https://")) {
+      cleanBase = `https://${cleanBase}`;
+    }
+  }
+
+  return cleanBase;
+}
+
 function getToken(): string | null {
   return Cookies.get("access_token") || null;
 }
@@ -17,10 +39,14 @@ async function request<T>(
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  // Clean the BASE_URL to ensure it doesn't end with a slash, 
-  // and ensure path starts with a single slash.
-  const cleanBase = BASE_URL.replace(/\/$/, "");
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanBase = getCleanBaseUrl();
+  
+  // Enforce a leading slash and remove trailing slashes from path string endpoints
+  let cleanPath = path.trim().startsWith("/") ? path.trim() : `/${path.trim()}`;
+  if (cleanPath.endsWith("/") && cleanPath.length > 1) {
+    cleanPath = cleanPath.slice(0, -1);
+  }
+
   const fullUrl = `${cleanBase}${cleanPath}`;
 
   const res = await fetch(fullUrl, { ...options, headers });
@@ -39,7 +65,7 @@ export async function login(email: string, password: string) {
   form.append("username", email);
   form.append("password", password);
 
-  const cleanBase = BASE_URL.replace(/\/$/, "");
+  const cleanBase = getCleanBaseUrl();
   const res = await fetch(`${cleanBase}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -70,6 +96,10 @@ export async function register(data: {
 
 export async function logout() {
   return request("/auth/logout", { method: "POST" });
+}
+
+export async function getCurrentUser() {
+  return request("/auth/me");
 }
 
 // Tests (Teacher)
@@ -109,7 +139,9 @@ export async function searchTests(params: { name?: string; evaluator_id?: string
   const q = new URLSearchParams();
   if (params.name) q.set("name", params.name);
   if (params.evaluator_id) q.set("evaluator_id", params.evaluator_id);
-  return request(`/tests?${q.toString()}`); // Cleaned trailing slash before query string
+  
+  const queryString = q.toString();
+  return request(`/tests${queryString ? `?${queryString}` : ""}`);
 }
 
 export async function getTestById(testId: string) {
@@ -136,5 +168,5 @@ export async function getResultDetail(resultId: string) {
 
 // Teacher: get all their tests
 export async function getTeacherTests() {
-  return request("/tests"); // Cleaned trailing slash
+  return request("/tests");
 }
