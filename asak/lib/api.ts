@@ -17,13 +17,7 @@ async function request<T>(
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  // Clean the BASE_URL to ensure it doesn't end with a slash, 
-  // and ensure path starts with a single slash.
-  const cleanBase = BASE_URL.replace(/\/$/, "");
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  const fullUrl = `${cleanBase}${cleanPath}`;
-
-  const res = await fetch(fullUrl, { ...options, headers });
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: "Request failed" }));
@@ -39,8 +33,7 @@ export async function login(email: string, password: string) {
   form.append("username", email);
   form.append("password", password);
 
-  const cleanBase = BASE_URL.replace(/\/$/, "");
-  const res = await fetch(`${cleanBase}/auth/login`, {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form.toString(),
@@ -109,7 +102,7 @@ export async function searchTests(params: { name?: string; evaluator_id?: string
   const q = new URLSearchParams();
   if (params.name) q.set("name", params.name);
   if (params.evaluator_id) q.set("evaluator_id", params.evaluator_id);
-  return request(`/tests?${q.toString()}`); // Cleaned trailing slash before query string
+  return request(`/tests/?${q.toString()}`);
 }
 
 export async function getTestById(testId: string) {
@@ -136,5 +129,5 @@ export async function getResultDetail(resultId: string) {
 
 // Teacher: get all their tests
 export async function getTeacherTests() {
-  return request("/tests"); // Cleaned trailing slash
+  return request("/tests/");
 }
