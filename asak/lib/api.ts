@@ -2,25 +2,23 @@ import Cookies from "js-cookie";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-// Robust configuration helper to dynamically fix protocol mismatches on deployment platforms like Railway
+// Force-override the environment variable if running on Railway production
 function getCleanBaseUrl(): string {
-  let cleanBase = BASE_URL.trim().replace(/\/$/, "");
-
-  // Force HTTPS if running in browser under an HTTPS connection or if built for production
   if (typeof window !== "undefined") {
-    if (window.location.protocol === "https:" || window.location.hostname.includes("railway.app")) {
-      cleanBase = cleanBase.replace(/^http:\/\//, "https://");
-      if (!cleanBase.startsWith("https://")) {
-        cleanBase = `https://${cleanBase}`;
-      }
+    // If the browser address bar shows you are on Railway, bypass the build cache completely
+    if (window.location.hostname.includes("railway.app")) {
+      return "https://asak-production-0269.up.railway.app";
     }
-  } else if (process.env.NODE_ENV === "production") {
+  }
+
+  // Fallback cleanup for local development environment
+  let cleanBase = BASE_URL.trim().replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production" || cleanBase.includes("railway.app")) {
     cleanBase = cleanBase.replace(/^http:\/\//, "https://");
     if (!cleanBase.startsWith("https://")) {
       cleanBase = `https://${cleanBase}`;
     }
   }
-
   return cleanBase;
 }
 
@@ -41,7 +39,7 @@ async function request<T>(
 
   const cleanBase = getCleanBaseUrl();
   
-  // Enforce a leading slash and remove trailing slashes from path string endpoints
+  // Enforce leading slash and remove trailing slashes from path endpoints
   let cleanPath = path.trim().startsWith("/") ? path.trim() : `/${path.trim()}`;
   if (cleanPath.endsWith("/") && cleanPath.length > 1) {
     cleanPath = cleanPath.slice(0, -1);
