@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --green-mid: #bbf7d0;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --black: #0a0a0a;
+  --gray-900: #111827;
+  --gray-700: #374151;
+  --gray-500: #6b7280;
+  --gray-300: #d1d5db;
+  --gray-100: #f3f4f6;
+  --white: #fafafa;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--white); color: var(--black); font-family: 'Inter', system-ui, sans-serif; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scoreRing { from { stroke-dashoffset: 283; } to { stroke-dashoffset: var(--offset); } }
+
+.animate-fade-in { animation: fadeIn 0.3s ease both; }
+.score-ring { animation: scoreRing 1s ease forwards; }
