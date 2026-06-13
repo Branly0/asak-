@@ -22,10 +22,25 @@ export default function LoginPage() {
     try {
       const data = await login(email, password);
       setAccessToken(data.access_token);
-      // Fetch user profile
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/auth/me`, {
+
+      // --- URL SANITIZATION FIX ---
+      const rawBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      
+      // 1. Remove any trailing slashes from the configured environment variable
+      let cleanBaseUrl = rawBaseUrl.replace(/\/$/, "");
+      
+      // 2. Fallback check: If the user forgot 'https://' on Railway, force it.
+      // Otherwise, the browser appends it as a relative path to your frontend URL.
+      if (!cleanBaseUrl.startsWith("http://") && !cleanBaseUrl.startsWith("https://")) {
+        cleanBaseUrl = `https://${cleanBaseUrl}`;
+      }
+
+      // Fetch user profile securely using the scrubbed url
+      const res = await fetch(`${cleanBaseUrl}/auth/me`, {
         headers: { Authorization: `Bearer ${data.access_token}` },
       });
+      // ----------------------------
+
       if (res.ok) {
         const user = await res.json();
         setUser(user);
