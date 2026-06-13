@@ -2,16 +2,14 @@ import Cookies from "js-cookie";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-// Force-override the environment variable protocol if running on Railway production
+// Bypasses Next.js environment cache errors on production host environments
 function getCleanBaseUrl(): string {
   if (typeof window !== "undefined") {
-    // If the browser address bar shows you are on Railway, bypass the build cache completely
     if (window.location.hostname.includes("railway.app")) {
       return "https://asak-production.up.railway.app";
     }
   }
 
-  // Fallback cleanup for local development environment
   let cleanBase = BASE_URL.trim().replace(/\/$/, "");
   if (process.env.NODE_ENV === "production" || cleanBase.includes("railway.app")) {
     cleanBase = cleanBase.replace(/^http:\/\//, "https://");
@@ -39,11 +37,8 @@ async function request<T>(
 
   const cleanBase = getCleanBaseUrl();
   
-  // Enforce leading slash and remove trailing slashes from path endpoints
+  // Enforce leading slash on incoming string paths
   let cleanPath = path.trim().startsWith("/") ? path.trim() : `/${path.trim()}`;
-  if (cleanPath.endsWith("/") && cleanPath.length > 1) {
-    cleanPath = cleanPath.slice(0, -1);
-  }
 
   const fullUrl = `${cleanBase}${cleanPath}`;
 
@@ -139,7 +134,8 @@ export async function searchTests(params: { name?: string; evaluator_id?: string
   if (params.evaluator_id) q.set("evaluator_id", params.evaluator_id);
   
   const queryString = q.toString();
-  return request(`/tests${queryString ? `?${queryString}` : ""}`);
+  // Request explicitly using the trailing slash format to bypass internal FastAPI redirects
+  return request(`/tests/${queryString ? `?${queryString}` : ""}`);
 }
 
 export async function getTestById(testId: string) {
@@ -165,6 +161,7 @@ export async function getResultDetail(resultId: string) {
 }
 
 // Teacher: get all their tests
+// Added the explicit trailing slash matching FastAPI's @router.get("/") inside prefix "/tests"
 export async function getTeacherTests() {
-  return request("/tests");
+  return request("/tests/");
 }
