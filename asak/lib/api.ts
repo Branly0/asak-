@@ -2,12 +2,12 @@ import Cookies from "js-cookie";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
-// Force-override the environment variable if running on Railway production
+// Force-override the environment variable protocol if running on Railway production
 function getCleanBaseUrl(): string {
   if (typeof window !== "undefined") {
     // If the browser address bar shows you are on Railway, bypass the build cache completely
     if (window.location.hostname.includes("railway.app")) {
-      return "https://asak-production-0269.up.railway.app";
+      return "https://asak-production.up.railway.app";
     }
   }
 
