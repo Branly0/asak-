@@ -74,7 +74,7 @@ export default function CreateTestPage() {
 
     try {
       // Direct call matching your FastAPI route: /tests/{test_id}/upload-pdf
-      const response = await fetch(`http://localhost:8000/tests/${testId}/upload-pdf`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/tests/${testId}/upload-pdf`, {
         method: "POST",
         headers: {
           // If you use bearer tokens, grab it from your cookie/auth context here:
